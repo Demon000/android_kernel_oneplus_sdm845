@@ -3123,6 +3123,23 @@ The Alpha defines the Linux kernel's memory barrier model.
 
 See the subsection on "Cache Coherency" above.
 
+VIRTUAL MACHINE GUESTS
+-------------------
+
+Guests running within virtual machines might be affected by SMP effects even if
+the guest itself is compiled without SMP support.  This is an artifact of
+interfacing with an SMP host while running an UP kernel.  Using mandatory
+barriers for this use-case would be possible but is often suboptimal.
+
+To handle this case optimally, low-level virt_mb() etc macros are available.
+These have the same effect as smp_mb() etc when SMP is enabled, but generate
+identical code for SMP and non-SMP systems. For example, virtual machine guests
+should use virt_mb() rather than smp_mb() when synchronizing against a
+(possibly SMP) host.
+
+These are equivalent to smp_mb() etc counterparts in all other respects,
+in particular, they do not control MMIO effects: to control
+MMIO effects, use mandatory barriers.
 
 VIRTUAL MACHINE GUESTS
 ----------------------
