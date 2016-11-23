@@ -546,6 +546,10 @@ static int do_load_bpf_file(const char *path, fixup_map_cb fixup_map)
 				    &shdr_prog, &data_prog))
 				continue;
 
+			if (shdr_prog.sh_type != SHT_PROGBITS ||
+			    !(shdr_prog.sh_flags & SHF_EXECINSTR))
+				continue;
+
 			insns = (struct bpf_insn *) data_prog->d_buf;
 			processed_sec[i] = true; /* relo section */
 
