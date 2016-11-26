@@ -104,6 +104,7 @@ always += lwt_len_hist_kern.o
 always += xdp_tx_iptunnel_kern.o
 
 HOSTCFLAGS += -I$(objtree)/usr/include
+HOSTCFLAGS += -I$(objtree)/tools/testing/selftests/bpf/
 
 HOSTCFLAGS_bpf_load.o += -I$(objtree)/usr/include -Wno-unused-variable
 HOSTLOADLIBES_fds_example += -lelf
