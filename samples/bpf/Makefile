@@ -37,7 +37,7 @@ hostprogs-y += xdp_tx_iptunnel
 hostprogs-y += test_map_in_map
 
 # Libbpf dependencies
-LIBBPF := libbpf.o ../../tools/lib/bpf/bpf.o
+LIBBPF := ../../tools/lib/bpf/bpf.o
 
 test_lru_dist-objs := test_lru_dist.o $(LIBBPF)
 sock_example-objs := sock_example.o $(LIBBPF)
