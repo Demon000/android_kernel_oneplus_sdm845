@@ -38,6 +38,8 @@ enum {
 	MAP_KEY_BYTES,
 };
 
+char bpf_log_buf[BPF_LOG_BUF_SIZE];
+
 static int prog_load(int map_fd, int verdict)
 {
 	struct bpf_insn prog[] = {
@@ -69,8 +71,9 @@ static int prog_load(int map_fd, int verdict)
 		BPF_EXIT_INSN(),
 	};
 
-	return bpf_prog_load(BPF_PROG_TYPE_CGROUP_SKB,
-			     prog, sizeof(prog), "GPL", 0);
+	return bpf_load_program(BPF_PROG_TYPE_CGROUP_SKB,
+				prog, sizeof(prog), "GPL", 0,
+				bpf_log_buf, BPF_LOG_BUF_SIZE);
 }
 
 static int usage(const char *argv0)
@@ -133,10 +136,10 @@ int main(int argc, char **argv)
 
 	while (1) {
 		key = MAP_KEY_PACKETS;
-		assert(bpf_lookup_elem(map_fd, &key, &pkt_cnt) == 0);
+		assert(bpf_map_lookup_elem(map_fd, &key, &pkt_cnt) == 0);
 
 		key = MAP_KEY_BYTES;
-		assert(bpf_lookup_elem(map_fd, &key, &byte_cnt) == 0);
+		assert(bpf_map_lookup_elem(map_fd, &key, &byte_cnt) == 0);
 
 		printf("cgroup received %lld packets, %lld bytes\n",
 		       pkt_cnt, byte_cnt);
