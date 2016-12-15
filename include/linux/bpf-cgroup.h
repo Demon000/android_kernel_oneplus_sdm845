@@ -20,7 +20,7 @@ struct cgroup_bpf {
 	 * when this cgroup is accessed.
 	 */
 	struct bpf_prog *prog[MAX_BPF_ATTACH_TYPE];
-	struct bpf_prog *effective[MAX_BPF_ATTACH_TYPE];
+	struct bpf_prog __rcu *effective[MAX_BPF_ATTACH_TYPE];
 	bool disallow_override[MAX_BPF_ATTACH_TYPE];
 };
 
