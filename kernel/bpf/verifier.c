@@ -6202,6 +6202,10 @@ static int replace_map_fd_with_map_ptr(struct bpf_verifier_env *env)
 	int insn_cnt = env->prog->len;
 	int i, j, err;
 
+	err = bpf_prog_calc_digest(env->prog);
+	if (err)
+		return err;
+
 	for (i = 0; i < insn_cnt; i++, insn++) {
 		if (BPF_CLASS(insn->code) == BPF_LDX &&
 		    (BPF_MODE(insn->code) != BPF_MEM || insn->imm != 0)) {
@@ -7070,8 +7074,6 @@ int bpf_check(struct bpf_prog **prog, union bpf_attr *attr,
 		if (ret)
 			goto err_unlock;
 	}
-
-	bpf_prog_calc_digest(env->prog);
 
 	ret = replace_map_fd_with_map_ptr(env);
 	if (ret < 0)
