@@ -1600,6 +1600,7 @@ void ixgbe_alloc_rx_buffers(struct ixgbe_ring *rx_ring, u16 cleaned_count)
 	union ixgbe_adv_rx_desc *rx_desc;
 	struct ixgbe_rx_buffer *bi;
 	u16 i = rx_ring->next_to_use;
+	u16 bufsz;
 
 	/* nothing to do */
 	if (!cleaned_count)
@@ -1609,14 +1610,15 @@ void ixgbe_alloc_rx_buffers(struct ixgbe_ring *rx_ring, u16 cleaned_count)
 	bi = &rx_ring->rx_buffer_info[i];
 	i -= rx_ring->count;
 
+	bufsz = ixgbe_rx_bufsz(rx_ring);
+
 	do {
 		if (!ixgbe_alloc_mapped_page(rx_ring, bi))
 			break;
 
 		/* sync the buffer for use by the device */
 		dma_sync_single_range_for_device(rx_ring->dev, bi->dma,
-						 bi->page_offset,
-						 ixgbe_rx_bufsz(rx_ring),
+						 bi->page_offset, bufsz,
 						 DMA_FROM_DEVICE);
 
 		/*
@@ -1997,9 +1999,9 @@ static void ixgbe_add_rx_frag(struct ixgbe_ring *rx_ring,
 			      unsigned int size)
 {
 #if (PAGE_SIZE < 8192)
-	unsigned int truesize = ixgbe_rx_bufsz(rx_ring);
+	unsigned int truesize = ixgbe_rx_pg_size(rx_ring) / 2;
 #else
-	unsigned int truesize = ALIGN(size, L1_CACHE_BYTES);
+	unsigned int truesize = SKB_DATA_ALIGN(size);
 #endif
 	skb_add_rx_frag(skb, skb_shinfo(skb)->nr_frags, rx_buffer->page,
 			rx_buffer->page_offset, size, truesize);
@@ -3897,10 +3899,15 @@ static void ixgbe_set_rx_buffer_len(struct ixgbe_adapter *adapter)
 	 */
 	for (i = 0; i < adapter->num_rx_queues; i++) {
 		rx_ring = adapter->rx_ring[i];
+
+		clear_ring_rsc_enabled(rx_ring);
+		clear_bit(__IXGBE_RX_3K_BUFFER, &rx_ring->state);
+
 		if (adapter->flags2 & IXGBE_FLAG2_RSC_ENABLED)
 			set_ring_rsc_enabled(rx_ring);
-		else
-			clear_ring_rsc_enabled(rx_ring);
+
+		if (test_bit(__IXGBE_RX_FCOE, &rx_ring->state))
+			set_bit(__IXGBE_RX_3K_BUFFER, &rx_ring->state);
 	}
 }
 
