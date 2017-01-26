@@ -1059,6 +1059,17 @@ static struct ctl_table ipv4_net_table[] = {
 		.extra1		= &three,
 		.extra2		= &hundred,
 	},
+#ifdef CONFIG_NET_L3_MASTER_DEV
+	{
+		.procname	= "udp_l3mdev_accept",
+		.data		= &init_net.ipv4.sysctl_udp_l3mdev_accept,
+		.maxlen		= sizeof(int),
+		.mode		= 0644,
+		.proc_handler	= proc_dointvec_minmax,
+		.extra1		= &zero,
+		.extra2		= &one,
+	},
+#endif
 	{ }
 };
 
