@@ -448,6 +448,11 @@ static int do_load_bpf_file(const char *path, fixup_map_cb fixup_map)
 	char *shname, *shname_prog;
 	int nr_maps = 0;
 
+	/* reset global variables */
+	kern_version = 0;
+	memset(license, 0, sizeof(license));
+	memset(processed_sec, 0, sizeof(processed_sec));
+
 	if (elf_version(EV_CURRENT) == EV_NONE)
 		return 1;
 
