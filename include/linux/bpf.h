@@ -43,6 +43,7 @@ struct bpf_map {
 	 * are also accessed in fast-path (e.g. ops, max_entries).
 	 */
 	const struct bpf_map_ops *ops ____cacheline_aligned;
+	struct bpf_map *inner_map_meta;
 	enum bpf_map_type map_type;
 	u32 key_size;
 	u32 value_size;
