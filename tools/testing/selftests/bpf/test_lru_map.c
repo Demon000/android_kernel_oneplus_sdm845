@@ -18,7 +18,7 @@
 #include "bpf_sys.h"
 
 #define LOCAL_FREE_TARGET	(128)
-#define PERCPU_FREE_TARGET	(16)
+#define PERCPU_FREE_TARGET	(4)
 
 static int nr_cpus;
 
