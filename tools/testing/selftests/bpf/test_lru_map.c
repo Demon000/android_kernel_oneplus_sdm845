@@ -187,12 +187,7 @@ static void test_lru_sanity1(int map_type, int map_flags, unsigned int tgt_free)
 	unsigned int map_size;
 
 	if (map_flags & BPF_F_NO_COMMON_LRU)
-		/* Ther percpu lru list (i.e each cpu has its own LRU
-		 * list) does not have a local free list.  Hence,
-		 * it will only free old nodes till there is no free
-		 * from the LRU list.  Hence, this test does not apply
-		 * to BPF_F_NO_COMMON_LRU
-		 */
+		/* This test is only applicable to common LRU list */
 		return;
 
 	printf("%s (map_type:%d map_flags:0x%X): ", __func__, map_type,
@@ -223,7 +218,7 @@ static void test_lru_sanity1(int map_type, int map_flags, unsigned int tgt_free)
 	for (key = 1; key < end_key; key++) {
 		assert(!bpf_map_lookup_elem(lru_map_fd, &key, value));
 		assert(!bpf_map_update_elem(expected_map_fd, &key, value,
-				            BPF_NOEXIST));
+					    BPF_NOEXIST));
 	}
 
 	/* Insert 1+tgt_free to 2*tgt_free
@@ -268,12 +263,7 @@ static void test_lru_sanity2(int map_type, int map_flags, unsigned int tgt_free)
 	unsigned int map_size;
 
 	if (map_flags & BPF_F_NO_COMMON_LRU)
-		/* Ther percpu lru list (i.e each cpu has its own LRU
-		 * list) does not have a local free list.  Hence,
-		 * it will only free old nodes till there is no free
-		 * from the LRU list.  Hence, this test does not apply
-		 * to BPF_F_NO_COMMON_LRU
-		 */
+		/* This test is only applicable to common LRU list */
 		return;
 
 	printf("%s (map_type:%d map_flags:0x%X): ", __func__, map_type,
@@ -285,11 +275,7 @@ static void test_lru_sanity2(int map_type, int map_flags, unsigned int tgt_free)
 	assert(batch_size * 2 == tgt_free);
 
 	map_size = tgt_free + batch_size;
-	if (map_flags & BPF_F_NO_COMMON_LRU)
-		lru_map_fd = create_map(map_type, map_flags,
-					map_size * nr_cpus);
-	else
-		lru_map_fd = create_map(map_type, map_flags, map_size);
+	lru_map_fd = create_map(map_type, map_flags, map_size);
 	assert(lru_map_fd != -1);
 
 	expected_map_fd = create_map(BPF_MAP_TYPE_HASH, 0, map_size);
@@ -336,7 +322,7 @@ static void test_lru_sanity2(int map_type, int map_flags, unsigned int tgt_free)
 		assert(!bpf_map_lookup_elem(lru_map_fd, &key, value));
 		assert(value[0] == 4321);
 		assert(!bpf_map_update_elem(expected_map_fd, &key, value,
-				            BPF_NOEXIST));
+					    BPF_NOEXIST));
 	}
 
 	value[0] = 1234;
@@ -356,7 +342,7 @@ static void test_lru_sanity2(int map_type, int map_flags, unsigned int tgt_free)
 		assert(!bpf_map_update_elem(lru_map_fd, &key, value,
 					    BPF_NOEXIST));
 		assert(!bpf_map_update_elem(expected_map_fd, &key, value,
-				            BPF_NOEXIST));
+					    BPF_NOEXIST));
 	}
 
 	assert(map_equal(lru_map_fd, expected_map_fd));
@@ -413,7 +399,7 @@ static void test_lru_sanity3(int map_type, int map_flags, unsigned int tgt_free)
 	for (key = 1; key < end_key; key++) {
 		assert(!bpf_map_lookup_elem(lru_map_fd, &key, value));
 		assert(!bpf_map_update_elem(expected_map_fd, &key, value,
-				            BPF_NOEXIST));
+					    BPF_NOEXIST));
 	}
 
 	/* Add 1+2*tgt_free to tgt_free*5/2
@@ -425,7 +411,7 @@ static void test_lru_sanity3(int map_type, int map_flags, unsigned int tgt_free)
 		assert(!bpf_map_update_elem(lru_map_fd, &key, value,
 					    BPF_NOEXIST));
 		assert(!bpf_map_update_elem(expected_map_fd, &key, value,
-				            BPF_NOEXIST));
+					    BPF_NOEXIST));
 	}
 
 	assert(map_equal(lru_map_fd, expected_map_fd));
@@ -484,7 +470,7 @@ static void test_lru_sanity4(int map_type, int map_flags, unsigned int tgt_free)
 		assert(!bpf_map_update_elem(lru_map_fd, &key, value,
 					    BPF_NOEXIST));
 		assert(!bpf_map_update_elem(expected_map_fd, &key, value,
-				            BPF_NOEXIST));
+					    BPF_NOEXIST));
 	}
 
 	assert(map_equal(lru_map_fd, expected_map_fd));
