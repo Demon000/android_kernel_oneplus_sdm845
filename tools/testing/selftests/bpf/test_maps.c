@@ -29,7 +29,7 @@ static int map_flags;
 
 static void test_hashmap(int task, void *data)
 {
-	long long key, next_key, value;
+	long long key, next_key, first_key, value;
 	int fd;
 
 	fd = bpf_create_map(BPF_MAP_TYPE_HASH, sizeof(key), sizeof(value),
@@ -90,10 +90,13 @@ static void test_hashmap(int task, void *data)
 	assert(bpf_map_delete_elem(fd, &key) == -1 && errno == ENOENT);
 
 	/* Iterate over two elements. */
+	assert(bpf_map_get_next_key(fd, NULL, &first_key) == 0 &&
+	       (first_key == 1 || first_key == 2));
 	assert(bpf_map_get_next_key(fd, &key, &next_key) == 0 &&
-	       (next_key == 1 || next_key == 2));
+	       (next_key == first_key));
 	assert(bpf_map_get_next_key(fd, &next_key, &next_key) == 0 &&
-	       (next_key == 1 || next_key == 2));
+	       (next_key == 1 || next_key == 2) &&
+	       (next_key != first_key));
 	assert(bpf_map_get_next_key(fd, &next_key, &next_key) == -1 &&
 	       errno == ENOENT);
 
@@ -106,6 +109,8 @@ static void test_hashmap(int task, void *data)
 
 	key = 0;
 	/* Check that map is empty. */
+	assert(bpf_map_get_next_key(fd, NULL, &next_key) == -1 &&
+	       errno == ENOENT);
 	assert(bpf_map_get_next_key(fd, &key, &next_key) == -1 &&
 	       errno == ENOENT);
 
@@ -134,7 +139,7 @@ static void test_hashmap_percpu(int task, void *data)
 {
 	unsigned int nr_cpus = bpf_num_possible_cpus();
 	long long value[nr_cpus];
-	long long key, next_key;
+	long long key, next_key, first_key;
 	int expected_key_mask = 0;
 	int fd, i;
 
@@ -194,7 +199,13 @@ static void test_hashmap_percpu(int task, void *data)
 	assert(bpf_map_delete_elem(fd, &key) == -1 && errno == ENOENT);
 
 	/* Iterate over two elements. */
+	assert(bpf_map_get_next_key(fd, NULL, &first_key) == 0 &&
+	       ((expected_key_mask & first_key) == first_key));
 	while (!bpf_map_get_next_key(fd, &key, &next_key)) {
+		if (first_key) {
+			assert(next_key == first_key);
+			first_key = 0;
+		}
 		assert((expected_key_mask & next_key) == next_key);
 		expected_key_mask &= ~next_key;
 
@@ -220,6 +231,8 @@ static void test_hashmap_percpu(int task, void *data)
 
 	key = 0;
 	/* Check that map is empty. */
+	assert(bpf_map_get_next_key(fd, NULL, &next_key) == -1 &&
+	       errno == ENOENT);
 	assert(bpf_map_get_next_key(fd, &key, &next_key) == -1 &&
 	       errno == ENOENT);
 
@@ -265,6 +278,8 @@ static void test_arraymap(int task, void *data)
 	assert(bpf_map_lookup_elem(fd, &key, &value) == -1 && errno == ENOENT);
 
 	/* Iterate over two elements. */
+	assert(bpf_map_get_next_key(fd, NULL, &next_key) == 0 &&
+	       next_key == 0);
 	assert(bpf_map_get_next_key(fd, &key, &next_key) == 0 &&
 	       next_key == 0);
 	assert(bpf_map_get_next_key(fd, &next_key, &next_key) == 0 &&
@@ -320,6 +335,8 @@ static void test_arraymap_percpu(int task, void *data)
 	assert(bpf_map_lookup_elem(fd, &key, values) == -1 && errno == ENOENT);
 
 	/* Iterate over two elements. */
+	assert(bpf_map_get_next_key(fd, NULL, &next_key) == 0 &&
+	       next_key == 0);
 	assert(bpf_map_get_next_key(fd, &key, &next_key) == 0 &&
 	       next_key == 0);
 	assert(bpf_map_get_next_key(fd, &next_key, &next_key) == 0 &&
@@ -849,6 +866,8 @@ static void test_map_large(void)
 	       errno == E2BIG);
 
 	/* Iterate through all elements. */
+	assert(bpf_map_get_next_key(fd, NULL, &key) == 0);
+	key.c = -1;
 	for (i = 0; i < MAP_SIZE; i++)
 		assert(bpf_map_get_next_key(fd, &key, &key) == 0);
 	assert(bpf_map_get_next_key(fd, &key, &key) == -1 && errno == ENOENT);
@@ -948,6 +967,7 @@ static void test_map_parallel(void)
 	       errno == EEXIST);
 
 	/* Check that all elements were inserted. */
+	assert(bpf_map_get_next_key(fd, NULL, &key) == 0);
 	key = -1;
 	for (i = 0; i < MAP_SIZE; i++)
 		assert(bpf_map_get_next_key(fd, &key, &key) == 0);
@@ -967,6 +987,7 @@ static void test_map_parallel(void)
 
 	/* Nothing should be left. */
 	key = -1;
+	assert(bpf_map_get_next_key(fd, NULL, &key) == -1 && errno == ENOENT);
 	assert(bpf_map_get_next_key(fd, &key, &key) == -1 && errno == ENOENT);
 }
 
