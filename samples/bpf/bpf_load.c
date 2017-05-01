@@ -14,6 +14,7 @@
 #include <linux/perf_event.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+#include <linux/types.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
@@ -677,7 +678,7 @@ struct ksym *ksym_search(long key)
 	return &syms[0];
 }
 
-int set_link_xdp_fd(int ifindex, int fd, int flags)
+int set_link_xdp_fd(int ifindex, int fd, __u32 flags)
 {
 	struct sockaddr_nl sa;
 	int sock, seq = 0, len, ret = -1;
