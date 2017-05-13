@@ -665,14 +665,11 @@ static int map_lookup_elem(union bpf_attr *attr)
 		goto err_put;
 	}
 
-	err = -ENOMEM;
-	key = kmalloc(map->key_size, GFP_USER);
-	if (!key)
+	key = memdup_user(ukey, map->key_size);
+	if (IS_ERR(key)) {
+		err = PTR_ERR(key);
 		goto err_put;
-
-	err = -EFAULT;
-	if (copy_from_user(key, ukey, map->key_size) != 0)
-		goto free_key;
+	}
 
 	if (map->map_type == BPF_MAP_TYPE_PERCPU_HASH ||
 	    map->map_type == BPF_MAP_TYPE_LRU_PERCPU_HASH ||
@@ -761,14 +758,11 @@ static int map_update_elem(union bpf_attr *attr)
 		goto err_put;
 	}
 
-	err = -ENOMEM;
-	key = kmalloc(map->key_size, GFP_USER);
-	if (!key)
+	key = memdup_user(ukey, map->key_size);
+	if (IS_ERR(key)) {
+		err = PTR_ERR(key);
 		goto err_put;
-
-	err = -EFAULT;
-	if (copy_from_user(key, ukey, map->key_size) != 0)
-		goto free_key;
+	}
 
 	if (map->map_type == BPF_MAP_TYPE_PERCPU_HASH ||
 	    map->map_type == BPF_MAP_TYPE_LRU_PERCPU_HASH ||
@@ -863,14 +857,11 @@ static int map_delete_elem(union bpf_attr *attr)
 		goto err_put;
 	}
 
-	err = -ENOMEM;
-	key = kmalloc(map->key_size, GFP_USER);
-	if (!key)
+	key = memdup_user(ukey, map->key_size);
+	if (IS_ERR(key)) {
+		err = PTR_ERR(key);
 		goto err_put;
-
-	err = -EFAULT;
-	if (copy_from_user(key, ukey, map->key_size) != 0)
-		goto free_key;
+	}
 
 	if (bpf_map_is_dev_bound(map)) {
 		err = bpf_map_offload_delete_elem(map, key);
@@ -888,7 +879,6 @@ static int map_delete_elem(union bpf_attr *attr)
 out:
 	if (!err)
 		trace_bpf_map_delete_elem(map, ufd, key);
-free_key:
 	kfree(key);
 err_put:
 	fdput(f);
@@ -922,14 +912,11 @@ static int map_get_next_key(union bpf_attr *attr)
 	}
 
 	if (ukey) {
-		err = -ENOMEM;
-		key = kmalloc(map->key_size, GFP_USER);
-		if (!key)
+		key = memdup_user(ukey, map->key_size);
+		if (IS_ERR(key)) {
+			err = PTR_ERR(key);
 			goto err_put;
-
-		err = -EFAULT;
-		if (copy_from_user(key, ukey, map->key_size) != 0)
-			goto free_key;
+		}
 	} else {
 		key = NULL;
 	}
