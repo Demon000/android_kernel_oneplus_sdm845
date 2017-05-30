@@ -935,7 +935,7 @@ static unsigned int ___bpf_prog_run(u64 *regs, const struct bpf_insn *insn,
 		[BPF_ALU64 | BPF_NEG] = &&ALU64_NEG,
 		/* Call instruction */
 		[BPF_JMP | BPF_CALL] = &&JMP_CALL,
-		[BPF_JMP | BPF_CALL | BPF_X] = &&JMP_TAIL_CALL,
+		[BPF_JMP | BPF_TAIL_CALL] = &&JMP_TAIL_CALL,
 		/* Jumps */
 		[BPF_JMP | BPF_JA] = &&JMP_JA,
 		[BPF_JMP | BPF_JEQ | BPF_X] = &&JMP_JEQ_X,
