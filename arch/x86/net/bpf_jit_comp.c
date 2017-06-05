@@ -1209,6 +1209,7 @@ skip_init_addrs:
 		}
 		prog->bpf_func = (void *)image;
 		prog->jited = 1;
+		prog->jited_len = proglen;
 	} else {
 		prog = orig_prog;
 	}
