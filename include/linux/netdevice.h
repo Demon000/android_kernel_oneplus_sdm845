@@ -818,6 +818,7 @@ enum xdp_netdev_command {
 	 * when it is no longer used.
 	 */
 	XDP_SETUP_PROG,
+	XDP_SETUP_PROG_HW,
 	/* Check if a bpf program is set on the device.  The callee should
 	 * set @prog_attached to one of XDP_ATTACHED_* values, note that "true"
 	 * is equivalent to XDP_ATTACHED_DRV.
