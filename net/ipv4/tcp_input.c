@@ -6007,14 +6007,8 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
 		goto discard;
 
 	case TCP_SYN_SENT:
-<<<<<<< HEAD
 		tp->rx_opt.saw_tstamp = 0;
-		skb_mstamp_get(&tp->tcp_mstamp);
-||||||| parent of 902e927031464 (tcp: switch TCP TS option (RFC 7323) to 1ms clock)
-		skb_mstamp_get(&tp->tcp_mstamp);
-=======
 		tcp_mstamp_refresh(tp);
->>>>>>> 902e927031464 (tcp: switch TCP TS option (RFC 7323) to 1ms clock)
 		queued = tcp_rcv_synsent_state_process(sk, skb, th);
 		if (queued >= 0)
 			return queued;
@@ -6026,14 +6020,8 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
 		return 0;
 	}
 
-<<<<<<< HEAD
 	tp->rx_opt.saw_tstamp = 0;
-	skb_mstamp_get(&tp->tcp_mstamp);
-||||||| parent of 902e927031464 (tcp: switch TCP TS option (RFC 7323) to 1ms clock)
-	skb_mstamp_get(&tp->tcp_mstamp);
-=======
 	tcp_mstamp_refresh(tp);
->>>>>>> 902e927031464 (tcp: switch TCP TS option (RFC 7323) to 1ms clock)
 	req = tp->fastopen_rsk;
 	if (req) {
 		WARN_ON_ONCE(sk->sk_state != TCP_SYN_RECV &&
@@ -6529,7 +6517,8 @@ int tcp_conn_request(struct request_sock_ops *rsk_ops,
 	} else {
 		tcp_rsk(req)->tfo_listener = false;
 		if (!want_cookie)
-			inet_csk_reqsk_queue_hash_add(sk, req, TCP_TIMEOUT_INIT);
+			inet_csk_reqsk_queue_hash_add(sk, req,
+				tcp_timeout_init((struct sock *)req));
 		af_ops->send_synack(sk, dst, &fl, req, &foc,
 				    !want_cookie ? TCP_SYNACK_NORMAL :
 						   TCP_SYNACK_COOKIE);
