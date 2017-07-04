@@ -390,8 +390,12 @@ int load_bpf_file(char *path)
 		    memcmp(shname, "perf_event", 10) == 0 ||
 		    memcmp(shname, "socket", 6) == 0 ||
 		    memcmp(shname, "cgroup/", 7) == 0 ||
-		    memcmp(shname, "sockops", 7) == 0)
-			load_and_attach(shname, data->d_buf, data->d_size);
+		    memcmp(shname, "sockops", 7) == 0) {
+			ret = load_and_attach(shname, data->d_buf,
+					      data->d_size);
+			if (ret != 0)
+				goto done;
+		}
 	}
 
 	close(fd);
