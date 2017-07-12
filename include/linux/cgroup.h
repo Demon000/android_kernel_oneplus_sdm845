@@ -657,6 +657,9 @@ static inline union kernfs_node_id *cgroup_get_kernfs_id(struct cgroup *cgrp)
 {
 	return &cgrp->kn->id;
 }
+
+void cgroup_path_from_kernfs_id(const union kernfs_node_id *id,
+					char *buf, size_t buflen);
 #else /* !CONFIG_CGROUPS */
 
 struct cgroup_subsys_state;
@@ -704,6 +707,9 @@ static inline int subsys_cgroup_allow_attach(void *tset)
 {
 	return -EINVAL;
 }
+
+static inline void cgroup_path_from_kernfs_id(const union kernfs_node_id *id,
+	char *buf, size_t buflen) {}
 #endif /* !CONFIG_CGROUPS */
 
 /*
