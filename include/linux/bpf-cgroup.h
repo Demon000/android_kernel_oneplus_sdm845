@@ -253,7 +253,7 @@ int bpf_percpu_cgroup_storage_update(struct bpf_map *map, void *key,
 	int __ret = 0;							       \
 	if (cgroup_bpf_enabled && (sock_ops)->sk) {	       \
 		typeof(sk) __sk = sk_to_full_sk((sock_ops)->sk);	       \
-		if (sk_fullsock(__sk))					       \
+		if (__sk && sk_fullsock(__sk))				       \
 			__ret = __cgroup_bpf_run_filter_sock_ops(__sk,	       \
 								 sock_ops,     \
 							 BPF_CGROUP_SOCK_OPS); \
