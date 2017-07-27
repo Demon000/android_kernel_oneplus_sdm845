@@ -2078,7 +2078,7 @@ static int bpf_prog_get_info_by_fd(struct bpf_prog *prog,
 
 	memset(&info, 0, sizeof(info));
 	if (copy_from_user(&info, uinfo, info_len))
-		return err;
+		return -EFAULT;
 
 	info.type = prog->type;
 	info.id = prog->aux->id;
