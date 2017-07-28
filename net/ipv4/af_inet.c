@@ -961,6 +961,8 @@ const struct proto_ops inet_stream_ops = {
 	.splice_read	   = tcp_splice_read,
 	.read_sock	   = tcp_read_sock,
 	.peek_len	   = tcp_peek_len,
+	.sendmsg_locked    = tcp_sendmsg_locked,
+	.sendpage_locked   = tcp_sendpage_locked,
 #ifdef CONFIG_COMPAT
 	.compat_setsockopt = compat_sock_common_setsockopt,
 	.compat_getsockopt = compat_sock_common_getsockopt,
