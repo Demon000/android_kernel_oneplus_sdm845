@@ -2132,7 +2132,7 @@ static int bpf_prog_get_info_by_fd(struct bpf_prog *prog,
 	}
 
 	ulen = info.xlated_prog_len;
-	info.xlated_prog_len = bpf_prog_size(prog->len);
+	info.xlated_prog_len = bpf_prog_insn_size(prog);
 	if (info.xlated_prog_len && ulen) {
 		struct bpf_insn *insns_sanitized;
 		bool fault;
