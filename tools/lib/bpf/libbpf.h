@@ -221,4 +221,6 @@ void *bpf_map__priv(struct bpf_map *map);
 
 long libbpf_get_error(const void *ptr);
 
+int bpf_prog_load(const char *file, enum bpf_prog_type type,
+		  struct bpf_object **pobj, int *prog_fd);
 #endif
