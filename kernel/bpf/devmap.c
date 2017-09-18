@@ -104,8 +104,8 @@ static u64 dev_map_bitmap_size(const union bpf_attr *attr)
 static struct bpf_map *dev_map_alloc(union bpf_attr *attr)
 {
 	struct bpf_dtab *dtab;
+	int err = -EINVAL;
 	u64 cost;
-	int err;
 
 	if (!capable(CAP_NET_ADMIN))
 		return ERR_PTR(-EPERM);
@@ -149,6 +149,8 @@ static struct bpf_map *dev_map_alloc(union bpf_attr *attr)
 	if (err)
 		goto free_dtab;
 
+	err = -ENOMEM;
+
 	/* A per cpu bitfield with a bit per possible net device */
 	dtab->flush_needed = __alloc_percpu(dev_map_bitmap_size(attr),
 					    __alignof__(unsigned long));
@@ -180,7 +182,7 @@ free_dtab:
 	free_percpu(dtab->flush_needed);
 	kfree(dtab->dev_index_head);
 	kfree(dtab);
-	return ERR_PTR(-ENOMEM);
+	return ERR_PTR(err);
 }
 
 static void dev_map_free(struct bpf_map *map)
