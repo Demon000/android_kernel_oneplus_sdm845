@@ -373,6 +373,153 @@ static struct sk_buff *receive_small(struct virtnet_info *vi, void *buf, unsigne
 	len -= vi->hdr_len;
 	skb_trim(skb, len);
 
+<<<<<<< HEAD
+||||||| parent of 796a54ebc80f (bpf: add meta pointer for direct access)
+	rcu_read_lock();
+	xdp_prog = rcu_dereference(rq->xdp_prog);
+	if (xdp_prog) {
+		struct virtio_net_hdr_mrg_rxbuf *hdr = buf + header_offset;
+		struct xdp_buff xdp;
+		void *orig_data;
+		u32 act;
+
+		if (unlikely(hdr->hdr.gso_type))
+			goto err_xdp;
+
+		if (unlikely(xdp_headroom < virtnet_get_headroom(vi))) {
+			int offset = buf - page_address(page) + header_offset;
+			unsigned int tlen = len + vi->hdr_len;
+			u16 num_buf = 1;
+
+			xdp_headroom = virtnet_get_headroom(vi);
+			header_offset = VIRTNET_RX_PAD + xdp_headroom;
+			headroom = vi->hdr_len + header_offset;
+			buflen = SKB_DATA_ALIGN(GOOD_PACKET_LEN + headroom) +
+				 SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+			xdp_page = xdp_linearize_page(rq, &num_buf, page,
+						      offset, header_offset,
+						      &tlen);
+			if (!xdp_page)
+				goto err_xdp;
+
+			buf = page_address(xdp_page);
+			put_page(page);
+			page = xdp_page;
+		}
+
+		xdp.data_hard_start = buf + VIRTNET_RX_PAD + vi->hdr_len;
+		xdp.data = xdp.data_hard_start + xdp_headroom;
+		xdp.data_end = xdp.data + len;
+		orig_data = xdp.data;
+		act = bpf_prog_run_xdp(xdp_prog, &xdp);
+
+		switch (act) {
+		case XDP_PASS:
+			/* Recalculate length in case bpf program changed it */
+			delta = orig_data - xdp.data;
+			break;
+		case XDP_TX:
+			if (unlikely(!virtnet_xdp_xmit(vi, rq, &xdp)))
+				trace_xdp_exception(vi->dev, xdp_prog, act);
+			rcu_read_unlock();
+			goto xdp_xmit;
+		default:
+			bpf_warn_invalid_xdp_action(act);
+		case XDP_ABORTED:
+			trace_xdp_exception(vi->dev, xdp_prog, act);
+		case XDP_DROP:
+			goto err_xdp;
+		}
+	}
+	rcu_read_unlock();
+
+	skb = build_skb(buf, buflen);
+	if (!skb) {
+		put_page(page);
+		goto err;
+	}
+	skb_reserve(skb, headroom - delta);
+	skb_put(skb, len + delta);
+	if (!delta) {
+		buf += header_offset;
+		memcpy(skb_vnet_hdr(skb), buf, vi->hdr_len);
+	} /* keep zeroed vnet hdr since packet was changed by bpf */
+
+err:
+=======
+	rcu_read_lock();
+	xdp_prog = rcu_dereference(rq->xdp_prog);
+	if (xdp_prog) {
+		struct virtio_net_hdr_mrg_rxbuf *hdr = buf + header_offset;
+		struct xdp_buff xdp;
+		void *orig_data;
+		u32 act;
+
+		if (unlikely(hdr->hdr.gso_type))
+			goto err_xdp;
+
+		if (unlikely(xdp_headroom < virtnet_get_headroom(vi))) {
+			int offset = buf - page_address(page) + header_offset;
+			unsigned int tlen = len + vi->hdr_len;
+			u16 num_buf = 1;
+
+			xdp_headroom = virtnet_get_headroom(vi);
+			header_offset = VIRTNET_RX_PAD + xdp_headroom;
+			headroom = vi->hdr_len + header_offset;
+			buflen = SKB_DATA_ALIGN(GOOD_PACKET_LEN + headroom) +
+				 SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+			xdp_page = xdp_linearize_page(rq, &num_buf, page,
+						      offset, header_offset,
+						      &tlen);
+			if (!xdp_page)
+				goto err_xdp;
+
+			buf = page_address(xdp_page);
+			put_page(page);
+			page = xdp_page;
+		}
+
+		xdp.data_hard_start = buf + VIRTNET_RX_PAD + vi->hdr_len;
+		xdp.data = xdp.data_hard_start + xdp_headroom;
+		xdp_set_data_meta_invalid(&xdp);
+		xdp.data_end = xdp.data + len;
+		orig_data = xdp.data;
+		act = bpf_prog_run_xdp(xdp_prog, &xdp);
+
+		switch (act) {
+		case XDP_PASS:
+			/* Recalculate length in case bpf program changed it */
+			delta = orig_data - xdp.data;
+			break;
+		case XDP_TX:
+			if (unlikely(!virtnet_xdp_xmit(vi, rq, &xdp)))
+				trace_xdp_exception(vi->dev, xdp_prog, act);
+			rcu_read_unlock();
+			goto xdp_xmit;
+		default:
+			bpf_warn_invalid_xdp_action(act);
+		case XDP_ABORTED:
+			trace_xdp_exception(vi->dev, xdp_prog, act);
+		case XDP_DROP:
+			goto err_xdp;
+		}
+	}
+	rcu_read_unlock();
+
+	skb = build_skb(buf, buflen);
+	if (!skb) {
+		put_page(page);
+		goto err;
+	}
+	skb_reserve(skb, headroom - delta);
+	skb_put(skb, len + delta);
+	if (!delta) {
+		buf += header_offset;
+		memcpy(skb_vnet_hdr(skb), buf, vi->hdr_len);
+	} /* keep zeroed vnet hdr since packet was changed by bpf */
+
+err:
+>>>>>>> 796a54ebc80f (bpf: add meta pointer for direct access)
 	return skb;
 }
 
@@ -452,8 +599,133 @@ static struct sk_buff *receive_mergeable(struct net_device *dev,
 		if (unlikely(hdr->hdr.gso_type || hdr->hdr.flags))
 			goto err_xdp;
 
+<<<<<<< HEAD
 		act = do_xdp_prog(vi, xdp_prog, page, offset, len);
 		if (act == XDP_DROP)
+||||||| parent of 796a54ebc80f (bpf: add meta pointer for direct access)
+		/* This happens when rx buffer size is underestimated */
+		if (unlikely(num_buf > 1 ||
+			     headroom < virtnet_get_headroom(vi))) {
+			/* linearize data for XDP */
+			xdp_page = xdp_linearize_page(rq, &num_buf,
+						      page, offset,
+						      VIRTIO_XDP_HEADROOM,
+						      &len);
+			if (!xdp_page)
+				goto err_xdp;
+			offset = VIRTIO_XDP_HEADROOM;
+		} else {
+			xdp_page = page;
+		}
+
+		/* Allow consuming headroom but reserve enough space to push
+		 * the descriptor on if we get an XDP_TX return code.
+		 */
+		data = page_address(xdp_page) + offset;
+		xdp.data_hard_start = data - VIRTIO_XDP_HEADROOM + vi->hdr_len;
+		xdp.data = data + vi->hdr_len;
+		xdp.data_end = xdp.data + (len - vi->hdr_len);
+		act = bpf_prog_run_xdp(xdp_prog, &xdp);
+
+		switch (act) {
+		case XDP_PASS:
+			/* recalculate offset to account for any header
+			 * adjustments. Note other cases do not build an
+			 * skb and avoid using offset
+			 */
+			offset = xdp.data -
+					page_address(xdp_page) - vi->hdr_len;
+
+			/* We can only create skb based on xdp_page. */
+			if (unlikely(xdp_page != page)) {
+				rcu_read_unlock();
+				put_page(page);
+				head_skb = page_to_skb(vi, rq, xdp_page,
+						       offset, len,
+						       PAGE_SIZE, false);
+				ewma_pkt_len_add(&rq->mrg_avg_pkt_len, len);
+				return head_skb;
+			}
+			break;
+		case XDP_TX:
+			if (unlikely(!virtnet_xdp_xmit(vi, rq, &xdp)))
+				trace_xdp_exception(vi->dev, xdp_prog, act);
+			ewma_pkt_len_add(&rq->mrg_avg_pkt_len, len);
+			if (unlikely(xdp_page != page))
+				put_page(page);
+			rcu_read_unlock();
+			goto xdp_xmit;
+		default:
+			bpf_warn_invalid_xdp_action(act);
+		case XDP_ABORTED:
+			trace_xdp_exception(vi->dev, xdp_prog, act);
+		case XDP_DROP:
+			if (unlikely(xdp_page != page))
+				__free_pages(xdp_page, 0);
+			ewma_pkt_len_add(&rq->mrg_avg_pkt_len, len);
+=======
+		/* This happens when rx buffer size is underestimated */
+		if (unlikely(num_buf > 1 ||
+			     headroom < virtnet_get_headroom(vi))) {
+			/* linearize data for XDP */
+			xdp_page = xdp_linearize_page(rq, &num_buf,
+						      page, offset,
+						      VIRTIO_XDP_HEADROOM,
+						      &len);
+			if (!xdp_page)
+				goto err_xdp;
+			offset = VIRTIO_XDP_HEADROOM;
+		} else {
+			xdp_page = page;
+		}
+
+		/* Allow consuming headroom but reserve enough space to push
+		 * the descriptor on if we get an XDP_TX return code.
+		 */
+		data = page_address(xdp_page) + offset;
+		xdp.data_hard_start = data - VIRTIO_XDP_HEADROOM + vi->hdr_len;
+		xdp.data = data + vi->hdr_len;
+		xdp_set_data_meta_invalid(&xdp);
+		xdp.data_end = xdp.data + (len - vi->hdr_len);
+		act = bpf_prog_run_xdp(xdp_prog, &xdp);
+
+		switch (act) {
+		case XDP_PASS:
+			/* recalculate offset to account for any header
+			 * adjustments. Note other cases do not build an
+			 * skb and avoid using offset
+			 */
+			offset = xdp.data -
+					page_address(xdp_page) - vi->hdr_len;
+
+			/* We can only create skb based on xdp_page. */
+			if (unlikely(xdp_page != page)) {
+				rcu_read_unlock();
+				put_page(page);
+				head_skb = page_to_skb(vi, rq, xdp_page,
+						       offset, len,
+						       PAGE_SIZE, false);
+				ewma_pkt_len_add(&rq->mrg_avg_pkt_len, len);
+				return head_skb;
+			}
+			break;
+		case XDP_TX:
+			if (unlikely(!virtnet_xdp_xmit(vi, rq, &xdp)))
+				trace_xdp_exception(vi->dev, xdp_prog, act);
+			ewma_pkt_len_add(&rq->mrg_avg_pkt_len, len);
+			if (unlikely(xdp_page != page))
+				put_page(page);
+			rcu_read_unlock();
+			goto xdp_xmit;
+		default:
+			bpf_warn_invalid_xdp_action(act);
+		case XDP_ABORTED:
+			trace_xdp_exception(vi->dev, xdp_prog, act);
+		case XDP_DROP:
+			if (unlikely(xdp_page != page))
+				__free_pages(xdp_page, 0);
+			ewma_pkt_len_add(&rq->mrg_avg_pkt_len, len);
+>>>>>>> 796a54ebc80f (bpf: add meta pointer for direct access)
 			goto err_xdp;
 	}
 	rcu_read_unlock();
