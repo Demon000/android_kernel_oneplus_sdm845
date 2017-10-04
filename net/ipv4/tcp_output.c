@@ -980,6 +980,12 @@ static void tcp_internal_pacing(struct sock *sk, const struct sk_buff *skb)
 		      HRTIMER_MODE_ABS_PINNED);
 }
 
+static void tcp_update_skb_after_send(struct tcp_sock *tp, struct sk_buff *skb)
+{
+	skb_mstamp_get(&skb->skb_mstamp);
+	list_move_tail(&skb->tcp_tsorted_anchor, &tp->tsorted_sent_queue);
+}
+
 /* This routine actually transmits TCP packets queued in by
  * tcp_do_sendmsg().  This is used by both the initial
  * transmission and possible later retransmissions.
@@ -1013,10 +1019,14 @@ static int __tcp_transmit_skb(struct sock *sk, struct sk_buff *skb,
 		TCP_SKB_CB(skb)->tx.in_flight = TCP_SKB_CB(skb)->end_seq
 			- tp->snd_una;
 		oskb = skb;
-		if (unlikely(skb_cloned(skb)))
-			skb = pskb_copy(skb, gfp_mask);
-		else
-			skb = skb_clone(skb, gfp_mask);
+
+		tcp_skb_tsorted_save(oskb) {
+			if (unlikely(skb_cloned(oskb)))
+				skb = pskb_copy(oskb, gfp_mask);
+			else
+				skb = skb_clone(oskb, gfp_mask);
+		} tcp_skb_tsorted_restore(oskb);
+
 		if (unlikely(!skb))
 			return -ENOBUFS;
 	}
@@ -1128,7 +1138,7 @@ static int __tcp_transmit_skb(struct sock *sk, struct sk_buff *skb,
 		err = net_xmit_eval(err);
 	}
 	if (!err && oskb) {
-		skb_mstamp_get(&oskb->skb_mstamp);
+		tcp_update_skb_after_send(tp, oskb);
 		tcp_rate_skb_sent(sk, oskb);
 	}
 	return err;
@@ -1350,6 +1360,7 @@ int tcp_fragment(struct sock *sk, struct sk_buff *skb, u32 len,
 	/* Link BUFF into the send queue. */
 	__skb_header_release(buff);
 	tcp_insert_write_queue_after(skb, buff, sk);
+	list_add(&buff->tcp_tsorted_anchor, &skb->tcp_tsorted_anchor);
 
 	return 0;
 }
@@ -2318,7 +2329,7 @@ static bool tcp_write_xmit(struct sock *sk, unsigned int mss_now, int nonagle,
 
 		if (unlikely(tp->repair) && tp->repair_queue == TCP_SEND_QUEUE) {
 			/* "skb_mstamp" is used as a start point for the retransmit timer */
-			skb->skb_mstamp = tp->tcp_mstamp;
+			tcp_update_skb_after_send(tp, skb);
 			goto repair; /* Skip network transmission */
 		}
 
@@ -2909,11 +2920,14 @@ int __tcp_retransmit_skb(struct sock *sk, struct sk_buff *skb, int segs)
 		     skb_headroom(skb) >= 0xFFFF)) {
 		struct sk_buff *nskb;
 
-		nskb = __pskb_copy(skb, MAX_TCP_HEADER, GFP_ATOMIC);
-		err = nskb ? tcp_transmit_skb(sk, nskb, 0, GFP_ATOMIC) :
-			     -ENOBUFS;
+		tcp_skb_tsorted_save(skb) {
+			nskb = __pskb_copy(skb, MAX_TCP_HEADER, GFP_ATOMIC);
+			err = nskb ? tcp_transmit_skb(sk, nskb, 0, GFP_ATOMIC) :
+				     -ENOBUFS;
+		} tcp_skb_tsorted_restore(skb);
+
 		if (!err)
-			skb->skb_mstamp = tp->tcp_mstamp;
+			tcp_update_skb_after_send(tp, skb);
 	} else {
 		err = tcp_transmit_skb(sk, skb, 1, GFP_ATOMIC);
 	}
@@ -3102,6 +3116,7 @@ coalesce:
 				goto coalesce;
 			return;
 		}
+		INIT_LIST_HEAD(&skb->tcp_tsorted_anchor);
 		skb_reserve(skb, MAX_TCP_HEADER);
 		sk_forced_mem_schedule(sk, skb->truesize);
 		/* FIN eats a sequence byte, write_seq advanced by tcp_queue_skb(). */
@@ -3157,9 +3172,14 @@ int tcp_send_synack(struct sock *sk)
 	}
 	if (!(TCP_SKB_CB(skb)->tcp_flags & TCPHDR_ACK)) {
 		if (skb_cloned(skb)) {
-			struct sk_buff *nskb = skb_copy(skb, GFP_ATOMIC);
+			struct sk_buff *nskb;
+
+			tcp_skb_tsorted_save(skb) {
+				nskb = skb_copy(skb, GFP_ATOMIC);
+			} tcp_skb_tsorted_restore(skb);
 			if (!nskb)
 				return -ENOMEM;
+			INIT_LIST_HEAD(&nskb->tcp_tsorted_anchor);
 			tcp_unlink_write_queue(skb, sk);
 			__skb_header_release(nskb);
 			__tcp_add_write_queue_head(sk, nskb);
