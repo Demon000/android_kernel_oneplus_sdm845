@@ -98,7 +98,7 @@ static struct hlist_head *dev_map_create_hash(unsigned int entries)
 
 static u64 dev_map_bitmap_size(const union bpf_attr *attr)
 {
-	return BITS_TO_LONGS(attr->max_entries) * sizeof(unsigned long);
+	return BITS_TO_LONGS((u64) attr->max_entries) * sizeof(unsigned long);
 }
 
 static struct bpf_map *dev_map_alloc(union bpf_attr *attr)
