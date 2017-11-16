@@ -493,7 +493,6 @@ struct bpf_binary_header {
 
 struct bpf_prog {
 	u16			pages;		/* Number of allocated pages */
-	kmemcheck_bitfield_begin(meta);
 	u16			jited:1,	/* Is our filter JIT'ed? */
 				jit_requested:1,/* archs need to JIT the prog */
 				undo_set_mem:1,	/* Passed set_memory_ro() checkpoint */
@@ -502,7 +501,6 @@ struct bpf_prog {
 				dst_needed:1,	/* Do we need dst entry? */
 				blinded:1,	/* Was blinded */
 				is_func:1;	/* program is a bpf function */
-	kmemcheck_bitfield_end(meta);
 	enum bpf_prog_type	type;		/* Type of BPF program */
 	enum bpf_attach_type	expected_attach_type; /* For some prog types */
 	u32			len;		/* Number of filter blocks */
