@@ -963,6 +963,7 @@ struct bpf_prog *bpf_prog_inc(struct bpf_prog *prog)
 {
 	return bpf_prog_add(prog, 1);
 }
+EXPORT_SYMBOL_GPL(bpf_prog_inc);
 
 /* prog_idr_lock should have been held */
 struct bpf_prog *bpf_prog_inc_not_zero(struct bpf_prog *prog)
