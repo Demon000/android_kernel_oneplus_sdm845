@@ -4863,8 +4863,8 @@ patch_call_imm:
 		 * programs to call them, must be real in-kernel functions
 		 */
 		if (!fn->func) {
-			verbose("kernel subsystem misconfigured func %d\n",
-				insn->imm);
+			verbose("kernel subsystem misconfigured func %s#%d\n",
+				func_id_name(insn->imm), insn->imm);
 			return -EFAULT;
 		}
 		insn->imm = fn->func - __bpf_call_base;
