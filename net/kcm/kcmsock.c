@@ -1381,32 +1381,24 @@ static int kcm_attach(struct socket *sock, struct socket *csock,
 	struct list_head *head;
 	int index = 0;
 	struct strp_callbacks cb;
-	int err = 0;
+	int err;
 
 	csk = csock->sk;
 	if (!csk)
 		return -EINVAL;
 
-	lock_sock(csk);
-
 	/* Only allow TCP sockets to be attached for now */
 	if ((csk->sk_family != AF_INET && csk->sk_family != AF_INET6) ||
-	    csk->sk_protocol != IPPROTO_TCP) {
-		err = -EOPNOTSUPP;
-		goto out;
-	}
+	    csk->sk_protocol != IPPROTO_TCP)
+		return -EOPNOTSUPP;
 
 	/* Don't allow listeners or closed sockets */
-	if (csk->sk_state == TCP_LISTEN || csk->sk_state == TCP_CLOSE) {
-		err = -EOPNOTSUPP;
-		goto out;
-	}
+	if (csk->sk_state == TCP_LISTEN || csk->sk_state == TCP_CLOSE)
+		return -EOPNOTSUPP;
 
 	psock = kmem_cache_zalloc(kcm_psockp, GFP_KERNEL);
-	if (!psock) {
-		err = -ENOMEM;
-		goto out;
-	}
+	if (!psock)
+		return -ENOMEM;
 
 	psock->mux = mux;
 	psock->sk = csk;
@@ -1420,7 +1412,7 @@ static int kcm_attach(struct socket *sock, struct socket *csock,
 	err = strp_init(&psock->strp, csk, &cb);
 	if (err) {
 		kmem_cache_free(kcm_psockp, psock);
-		goto out;
+		return err;
 	}
 
 	write_lock_bh(&csk->sk_callback_lock);
@@ -1433,8 +1425,7 @@ static int kcm_attach(struct socket *sock, struct socket *csock,
 		strp_stop(&psock->strp);
 		strp_done(&psock->strp);
 		kmem_cache_free(kcm_psockp, psock);
-		err = -EALREADY;
-		goto out;
+		return -EALREADY;
 	}
 
 	psock->save_data_ready = csk->sk_data_ready;
@@ -1470,10 +1461,7 @@ static int kcm_attach(struct socket *sock, struct socket *csock,
 	/* Schedule RX work in case there are already bytes queued */
 	strp_check_rcv(&psock->strp);
 
-out:
-	release_sock(csk);
-
-	return err;
+	return 0;
 }
 
 static int kcm_attach_ioctl(struct socket *sock, struct kcm_attach *info)
@@ -1525,7 +1513,6 @@ static void kcm_unattach(struct kcm_psock *psock)
 
 	if (WARN_ON(psock->rx_kcm)) {
 		write_unlock_bh(&csk->sk_callback_lock);
-		release_sock(csk);
 		return;
 	}
 
