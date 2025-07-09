@@ -3495,7 +3495,6 @@ static int fixup_bpf_calls(struct bpf_verifier_env *env)
 	struct bpf_map *map_ptr;
 	int i, cnt, delta = 0;
 
-
 	for (i = 0; i < insn_cnt; i++, insn++) {
 		if (insn->code != (BPF_JMP | BPF_CALL))
 			continue;
