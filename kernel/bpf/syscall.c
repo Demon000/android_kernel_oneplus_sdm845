@@ -1146,15 +1146,6 @@ static int bpf_prog_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-const struct file_operations bpf_prog_fops = {
-#ifdef CONFIG_PROC_FS
-	.show_fdinfo	= bpf_prog_show_fdinfo,
-#endif
-	.release = bpf_prog_release,
-	.read		= bpf_dummy_read,
-	.write		= bpf_dummy_write,
-};
-
 #ifdef CONFIG_PROC_FS
 static void bpf_prog_show_fdinfo(struct seq_file *m, struct file *filp)
 {
@@ -1173,6 +1164,15 @@ static void bpf_prog_show_fdinfo(struct seq_file *m, struct file *filp)
 		   prog->pages * 1ULL << PAGE_SHIFT);
 }
 #endif
+
+const struct file_operations bpf_prog_fops = {
+#ifdef CONFIG_PROC_FS
+	.show_fdinfo	= bpf_prog_show_fdinfo,
+#endif
+	.release	= bpf_prog_release,
+	.read		= bpf_dummy_read,
+	.write		= bpf_dummy_write,
+};
 
 int bpf_prog_new_fd(struct bpf_prog *prog)
 {
