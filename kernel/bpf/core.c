@@ -1595,7 +1595,7 @@ struct bpf_prog *bpf_prog_select_runtime(struct bpf_prog *fp, int *err)
 
 	fp->bpf_func = interpreters[(round_up(stack_depth, 32) / 32) - 1];
 #else
-	fp->bpf_func = (void *) __bpf_prog_ret0_warn;
+	fp->bpf_func = __bpf_prog_ret0_warn;
 #endif
 
 	/* eBPF JITs can rewrite the program in case constant
