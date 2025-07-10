@@ -5375,10 +5375,7 @@ restart:
 		goto out;
 
 	/* Note: ndo_busy_poll method is optional in linux-4.5 */
-	if (napi->dev->netdev_ops)
-		busy_poll = napi->dev->netdev_ops->ndo_busy_poll;
-	else
-		busy_poll = NULL;
+	busy_poll = napi->dev->netdev_ops->ndo_busy_poll;
 
 	preempt_disable();
 	for (;;) {
