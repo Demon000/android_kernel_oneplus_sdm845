@@ -368,6 +368,7 @@ union bpf_attr {
 			__u32		btf_id;
 		};
 		__u32		next_id;
+		__u32		open_flags;
 	};
 
 	struct { /* anonymous struct used by BPF_OBJ_GET_INFO_BY_FD */
