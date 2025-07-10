@@ -27,7 +27,6 @@
 #include <asm/byteorder.h>
 #include <asm/cacheflush.h>
 #include <asm/debug-monitors.h>
-#include <asm/set_memory.h>
 
 #include "bpf_jit.h"
 
