@@ -277,6 +277,38 @@ int bpf_analyzer(struct bpf_prog *prog, const struct bpf_ext_analyzer_ops *ops,
 
 #include <linux/vmalloc.h>
 #include <linux/mm.h>
+#include <linux/slab.h>
+
+static inline void *__compat_kvmalloc(size_t size, gfp_t flags)
+{
+	gfp_t kmalloc_flags = flags;
+	void *ret;
+	if (size > PAGE_SIZE) {
+		kmalloc_flags |= __GFP_NOWARN;
+		if (!(kmalloc_flags & __GFP_REPEAT) || (size <= PAGE_SIZE << PAGE_ALLOC_COSTLY_ORDER))
+			kmalloc_flags |= __GFP_NORETRY;
+	}
+	ret = kmalloc(size, kmalloc_flags);
+	if (ret || size <= PAGE_SIZE)
+		return ret;
+	return __vmalloc(size, flags, PAGE_KERNEL);
+}
+static inline void *__compat_kvzalloc(size_t size, gfp_t flags)
+{
+	return __compat_kvmalloc(size, flags | __GFP_ZERO);
+}
+#define kvmalloc __compat_kvmalloc
+#define kvzalloc __compat_kvzalloc
+
+static inline void *__compat_kvmalloc_array(size_t n, size_t size, gfp_t flags)
+{
+	if (n != 0 && SIZE_MAX / n < size)
+		return NULL;
+
+	return kvmalloc(n * size, flags);
+}
+#define kvmalloc_array __compat_kvmalloc_array
+
 static inline void *__compat_kvcalloc(size_t n, size_t size, gfp_t flags)
 {
         return kvmalloc_array(n, size, flags | __GFP_ZERO);
