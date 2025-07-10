@@ -72,6 +72,9 @@ struct bpf_map {
 	 */
 	const struct bpf_map_ops *ops ____cacheline_aligned;
 	struct bpf_map *inner_map_meta;
+#ifdef CONFIG_SECURITY
+	void *security;
+#endif
 	enum bpf_map_type map_type;
 	u32 key_size;
 	u32 value_size;
@@ -94,9 +97,6 @@ struct bpf_map {
 	atomic_t refcnt;
 	atomic_t usercnt;
 	struct work_struct work;
-#ifdef CONFIG_SECURITY
-	void *security;
-#endif
 	char name[BPF_OBJ_NAME_LEN];
 };
 
