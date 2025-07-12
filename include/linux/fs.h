@@ -1513,8 +1513,6 @@ extern struct timespec current_time(struct inode *inode);
 
 extern struct timespec current_time(struct inode *inode);
 
-extern struct timespec current_time(struct inode *inode);
-
 /*
  * Snapshotting support.
  */
