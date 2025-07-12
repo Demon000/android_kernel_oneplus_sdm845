@@ -3092,9 +3092,9 @@ struct sk_buff *tcp_get_timestamping_opt_stats(const struct sock *sk)
 		return NULL;
 
 	tcp_get_info_chrono_stats(tp, &info);
-	nla_put_u64(stats, TCP_NLA_BUSY, info.tcpi_busy_time);
-	nla_put_u64(stats, TCP_NLA_RWND_LIMITED, info.tcpi_rwnd_limited);
-	nla_put_u64(stats, TCP_NLA_SNDBUF_LIMITED, info.tcpi_sndbuf_limited);
+	nla_put_u64_64bit(stats, TCP_NLA_BUSY, info.tcpi_busy_time);
+	nla_put_u64_64bit(stats, TCP_NLA_RWND_LIMITED, info.tcpi_rwnd_limited);
+	nla_put_u64_64bit(stats, TCP_NLA_SNDBUF_LIMITED, info.tcpi_sndbuf_limited);
 	return stats;
 }
 
