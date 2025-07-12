@@ -984,7 +984,7 @@ static void tcp_internal_pacing(struct sock *sk, const struct sk_buff *skb)
 
 static void tcp_update_skb_after_send(struct tcp_sock *tp, struct sk_buff *skb)
 {
-	skb_mstamp_get(&skb->skb_mstamp);
+	tcp_mstamp_refresh(&skb->skb_mstamp);
 	list_move_tail(&skb->tcp_tsorted_anchor, &tp->tsorted_sent_queue);
 }
 
@@ -1032,7 +1032,7 @@ static int __tcp_transmit_skb(struct sock *sk, struct sk_buff *skb,
 		if (unlikely(!skb))
 			return -ENOBUFS;
 	}
-	skb_mstamp_get(&skb->skb_mstamp);
+	tcp_mstamp_refresh(&skb->skb_mstamp);
 
 	inet = inet_sk(sk);
 	tcb = TCP_SKB_CB(skb);
