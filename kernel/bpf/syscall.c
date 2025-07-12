@@ -348,7 +348,6 @@ static fmode_t map_get_sys_perms(struct bpf_map *map, struct fd f)
 static void bpf_map_show_fdinfo(struct seq_file *m, struct file *filp)
 {
 	const struct bpf_map *map = filp->private_data;
-	const struct bpf_map *map = filp->private_data;
 	const struct bpf_array *array;
 	u32 owner_prog_type = 0;
 	u32 owner_jited = 0;
