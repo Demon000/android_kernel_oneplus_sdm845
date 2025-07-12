@@ -150,8 +150,8 @@ static void *__bpf_map_area_alloc(size_t size, int numa_node, bool mmapable)
 		return vmalloc_user_node_flags(size, numa_node, GFP_KERNEL |
 					       __GFP_REPEAT | flags);
 	}
-	return __vmalloc_node_flags_caller(size, numa_node, GFP_KERNEL | flags,
-					   __builtin_return_address(0));
+	return __vmalloc_node(size, 1, GFP_KERNEL | flags, PAGE_KERNEL,
+			      numa_node, __builtin_return_address(0));
 }
 
 void *bpf_map_area_alloc(size_t size, int numa_node)
