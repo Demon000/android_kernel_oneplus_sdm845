@@ -2109,11 +2109,6 @@ static inline void tcp_segs_in(struct tcp_sock *tp, const struct sk_buff *skb)
 		tp->data_segs_in += segs_in;
 }
 
-static inline bool tcp_bpf_ca_needs_ecn(struct sock *sk)
-{
-	return (tcp_call_bpf(sk, BPF_SOCK_OPS_NEEDS_ECN, 0, NULL) == 1);
-}
-
 /*
  * TCP listen path runs lockless.
  * We forced "struct sock" to be const qualified to make sure
@@ -2253,6 +2248,11 @@ static inline u32 tcp_rwnd_init_bpf(struct sock *sk)
 	if (rwnd < 0)
 		rwnd = 0;
 	return rwnd;
+}
+
+static inline bool tcp_bpf_ca_needs_ecn(struct sock *sk)
+{
+	return (tcp_call_bpf(sk, BPF_SOCK_OPS_NEEDS_ECN, 0, NULL) == 1);
 }
 
 #endif	/* _TCP_H */
