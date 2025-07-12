@@ -2109,17 +2109,6 @@ static inline void tcp_segs_in(struct tcp_sock *tp, const struct sk_buff *skb)
 		tp->data_segs_in += segs_in;
 }
 
-static inline u32 tcp_rwnd_init_bpf(struct sock *sk)
-{
-	int rwnd;
-
-	rwnd = tcp_call_bpf(sk, BPF_SOCK_OPS_RWND_INIT, 0, NULL);
-
-	if (rwnd < 0)
-		rwnd = 0;
-	return rwnd;
-}
-
 static inline bool tcp_bpf_ca_needs_ecn(struct sock *sk)
 {
 	return (tcp_call_bpf(sk, BPF_SOCK_OPS_NEEDS_ECN, 0, NULL) == 1);
@@ -2253,6 +2242,17 @@ static inline u32 tcp_timeout_init(struct sock *sk)
 	if (timeout <= 0)
 		timeout = TCP_TIMEOUT_INIT;
 	return timeout;
+}
+
+static inline u32 tcp_rwnd_init_bpf(struct sock *sk)
+{
+	int rwnd;
+
+	rwnd = tcp_call_bpf(sk, BPF_SOCK_OPS_RWND_INIT, 0, NULL);
+
+	if (rwnd < 0)
+		rwnd = 0;
+	return rwnd;
 }
 
 #endif	/* _TCP_H */
