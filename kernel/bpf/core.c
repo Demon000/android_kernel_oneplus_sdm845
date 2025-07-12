@@ -2056,8 +2056,6 @@ void __weak bpf_jit_compile(struct bpf_prog *prog)
 {
 }
 
-bool __weak bpf_helper_changes_skb_data(void *func)
-||||||| parent of d9e394de01d6 (bpf: xdp: Allow head adjustment in XDP prog)
 /* Stub for JITs that support eBPF. All cBPF code gets transformed into
  * eBPF by the kernel and is later compiled by bpf_int_jit_compile().
  */
