@@ -2056,13 +2056,6 @@ void __weak bpf_jit_compile(struct bpf_prog *prog)
 {
 }
 
-/* Stub for JITs that support eBPF. All cBPF code gets transformed into
- * eBPF by the kernel and is later compiled by bpf_int_jit_compile().
- */
-void __weak bpf_jit_compile(struct bpf_prog *prog)
-{
-}
-
 bool __weak bpf_helper_changes_pkt_data(void *func)
 {
 	return false;
